@@ -1,18 +1,16 @@
 ## This script will check the frequency of the presence of the rhinovirus in the 2 seasons
 library(dplyr)
 library(stringr)
-# library(lubridate)
-# library(ggplot2)
-# library(rstatix)
-# library(ggpubr)
-# library(ggbeeswarm)
+library(config)
 
-setwd('/Users/tatiana/Work/RP2/ATLANTIS')
+# location 
+conf <- config::get()
 
-master.Table.ATLANTIS <- read.csv("./Season/Season_new_date/ATLANTIS_master_table_seasons_15Nov.csv")
+# load data
+master.Table.ATLANTIS <- read.csv(file.path(conf$data_path, "Season/Season_new_date/ATLANTIS_master_table_seasons_15Nov.csv"))
 
 # save files from CZID
-files <- list.files(path='./Microbes/Output/nasal_brushes_score_check', pattern="*.csv", full.names=TRUE, recursive=FALSE)
+files <- list.files(path = file.path(conf$data_path, "Microbes/Output/nasal_brushes_score_check"), pattern="*.csv", full.names=TRUE, recursive=FALSE)
 
 ###### save samples which fits filtering conditions: 
 ##bpresence of enterovirus with z_score > 3 ##########

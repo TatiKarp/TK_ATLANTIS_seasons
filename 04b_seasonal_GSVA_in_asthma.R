@@ -6,12 +6,16 @@ library(lubridate)
 library(ggplot2)
 library(rstatix)
 library(ggpubr)
+library(config)
 
-setwd("/Users/tatiana/Work/RP2/ATLANTIS/")
-master.Table <- read.csv("./Season/Season_new_date/ATLANTIS_master_table_seasons_15Nov.csv")
+# location 
+conf <- config::get()
+
+# load data
+master.Table <- read.csv(file.path(conf$data_path, "Season/Season_new_date/ATLANTIS_master_table_seasons_15Nov.csv"))
 
 # raw data
-expression.data <- read.csv('./Umi_dedup/20201107_ATLANTIS_raw_readcount_dedup_FINAL.csv', header =TRUE) %>%
+expression.data <- read.csv(file.path(conf$data_path, "Umi_dedup/20201107_ATLANTIS_raw_readcount_dedup_FINAL.csv"), header =TRUE) %>%
   tibble::column_to_rownames("Gene") %>%
   dplyr::select(c(master.Table$GenomeScan_ID))
 
@@ -25,7 +29,7 @@ DGEL <- edgeR::calcNormFactors(DGEL, method = "TMM")
 ATLANTIS_logcpm <- edgeR::cpm(DGEL,normalized.lib.sizes=TRUE, log=TRUE)
 
 # upload ATLANTIS season genes and calculate gsva score
-DE_ATLANTIS_seasons <- read.csv('./Season/Season_new_date/DE_genes_15Nov_winter_spring.csv')
+DE_ATLANTIS_seasons <- read.csv(file.path(conf$data_path, "Season/Season_new_date/DE_genes_15Nov_winter_spring.csv"))
 
 geneSets <- list(Up_genes = DE_ATLANTIS_seasons[DE_ATLANTIS_seasons$logFC>0 & DE_ATLANTIS_seasons$FDR<0.05,]$Gene,
                  Down_genes = DE_ATLANTIS_seasons[DE_ATLANTIS_seasons$logFC<0 & DE_ATLANTIS_seasons$FDR<0.05,]$Gene)
@@ -90,7 +94,7 @@ up_asthma <- ggplot(Up_genes_plot, aes(x = asthma.status, y = GSVA_value))+
                      remove.bracket = TRUE, parse = TRUE)+
   expand_limits(y = max(Up_genes_plot$GSVA_value) * 1.1)
 
-save(up_asthma, file = "./Season/Season_new_date/plots/up_asthma_seasons_GSVA.Rdata")
+save(up_asthma, file = file.path(conf$data_path, "Season/Season_new_date/plots/up_asthma_seasons_GSVA.Rdata"))
 
 
 Down_genes_plot <- df_ATLANTIS_GSVA%>%
@@ -134,7 +138,7 @@ down_asthma <- ggplot(Down_genes_plot, aes(x = asthma.status, y = GSVA_value))+
                      remove.bracket = TRUE, parse = TRUE) +
   expand_limits(y = max(Down_genes_plot$GSVA_value) * 1.1)
 
-save(down_asthma, file = "./Season/Season_new_date/plots/down_asthma_seasons_GSVA.Rdata")
+save(down_asthma, file = file.path(conf$data_path, "Season/Season_new_date/plots/down_asthma_seasons_GSVA.Rdata"))
 
 
 figure <- ggarrange(up_asthma,down_asthma,
@@ -146,7 +150,7 @@ figure <- ggarrange(up_asthma,down_asthma,
 all_asthma <- annotate_figure(figure,
                               left = text_grob("GSVA value",  rot = 90, face = "bold"))
 
-save(all_asthma, file = "./Season/Season_new_date/plots/Asthma_seasons_GSVA.Rdata")
+save(all_asthma, file = file.path(conf$data_path, "Season/Season_new_date/plots/Asthma_seasons_GSVA.Rdata"))
 
 
 ### check for coloblindness

@@ -5,14 +5,17 @@ library(lubridate)
 library(ggplot2)
 library(rstatix)
 library(ggpubr)
+library(config)
 
-setwd("~/Work/RP2/ATLANTIS/")
+# location 
+conf <- config::get()
 
-master.Table <- read.csv("./Season/Season_new_date/ATLANTIS_master_table_seasons_15Nov.csv")
+# load data
+master.Table <- read.csv(file.path(conf$data_path, "Season/Season_new_date/ATLANTIS_master_table_seasons_15Nov.csv"))
 
 # Add allergy data 
 
-clinical_table <-  read.csv('./atlantis_patient_data.csv', header =TRUE, na.strings=c("","NA"))%>%
+clinical_table <-  read.csv(file.path(conf$data_path, "atlantis_patient_data.csv"), header =TRUE, na.strings=c("","NA"))%>%
   #dplyr::select(-c(X))%>%
   dplyr::select(c('PT','PHADRES')) 
 clinical_table <- clinical_table[!duplicated(clinical_table$PT), ]
@@ -34,7 +37,7 @@ ggplot(master.Table.short, aes (x =as.Date(VISIT.DATE) , y = PHADRES))+
   theme_minimal()
 
 # raw data
-expression.data <- read.csv('./Umi_dedup/20201107_ATLANTIS_raw_readcount_dedup_FINAL.csv', header =TRUE) %>%
+expression.data <- read.csv(file.path(conf$data_path, "Umi_dedup/20201107_ATLANTIS_raw_readcount_dedup_FINAL.csv"), header =TRUE) %>%
   tibble::column_to_rownames("Gene") %>%
   dplyr::select(c(master.Table.short$GenomeScan_ID))
 
@@ -46,7 +49,7 @@ DGEL <- edgeR::calcNormFactors(DGEL, method = "TMM")
 ATLANTIS_logcpm <- edgeR::cpm(DGEL,normalized.lib.sizes=TRUE, log=TRUE)
 
 # upload ATLANTIS season genes and calculate gsva score
-DE_ATLANTIS_seasons <- read.csv('./Season/Season_new_date/DE_genes_15Nov_winter_spring.csv')
+DE_ATLANTIS_seasons <- read.csv(file.path(conf$data_path, "Season/Season_new_date/DE_genes_15Nov_winter_spring.csv"))
 
 geneSets <- list(Up_genes = DE_ATLANTIS_seasons[DE_ATLANTIS_seasons$logFC>0 & DE_ATLANTIS_seasons$FDR<0.05,]$Gene,
                  Down_genes = DE_ATLANTIS_seasons[DE_ATLANTIS_seasons$logFC<0 & DE_ATLANTIS_seasons$FDR<0.05,]$Gene)
@@ -112,7 +115,7 @@ up_allergy <- ggplot(Up_genes_plot, aes(x = PHADRES, y = GSVA_value))+
   expand_limits(y = max(Up_genes_plot$GSVA_value) * 1.1)
 
 
-save(up_allergy, file = "./Season/Season_new_date/plots/up_allergy_seasons_GSVA.Rdata")
+save(up_allergy, file = file.path(conf$data_path, "Season/Season_new_date/plots/up_allergy_seasons_GSVA.Rdata"))
 
 
 Down_genes_plot <- df_ATLANTIS_GSVA%>%
@@ -156,7 +159,7 @@ down_allergy <- ggplot(Down_genes_plot, aes(x = PHADRES, y = GSVA_value))+
                      remove.bracket = TRUE, parse = TRUE) +
   expand_limits(y = max(Down_genes_plot$GSVA_value) * 1.1)
 
-save(down_allergy, file = "./Season/Season_new_date/plots/down_allergy_seasons_GSVA.Rdata")
+save(down_allergy, file = file.path(conf$data_path, "Season/Season_new_date/plots/down_allergy_seasons_GSVA.Rdata"))
 
 
 all_allergy <- ggarrange(up_allergy,down_allergy,
@@ -164,6 +167,6 @@ all_allergy <- ggarrange(up_allergy,down_allergy,
                          common.legend = TRUE,
                          legend = "bottom",
                          nrow = 2)
-save(all_allergy, file = "./Season/Season_new_date/plots/Allergy_seasons_GSVA.Rdata")
+save(all_allergy, file = file.path(conf$data_path, "Season/Season_new_date/plots/Allergy_seasons_GSVA.Rdata"))
 
 

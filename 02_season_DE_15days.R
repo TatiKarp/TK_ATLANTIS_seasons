@@ -5,10 +5,14 @@ library(tibble)
 library(pheatmap)
 library(ggrepel)
 library(biomaRt)
+library(config)
 
-setwd("~/Work/RP2/ATLANTIS")
 
-master.Table <- read.csv("./Season/Season_new_date/ATLANTIS_master_table_seasons_new.csv", header = TRUE) %>%
+# location 
+conf <- config::get()
+
+# load data
+master.Table <- read.csv(file.path(conf$data_path, "Season/Season_new_date/ATLANTIS_master_table_seasons_new.csv"), header = TRUE) %>%
   dplyr::select(-c("VISDAT_c", "month", "season",  "season_2", "Date", "X", "Customer.ID",
             "PAT_NO.y", "Requestion.y", "RQN", "DayYear.Maarten", "difference", "season.Maaike", "season_2_Maaike"))
 
@@ -24,9 +28,9 @@ master.Table$asthma.status <- factor(master.Table$asthma.status, levels = c("H",
 #write.csv(master.Table, "./Season/Season_new_date/ATLANTIS_master_table_seasons_15Nov.csv", row.names = F)
 
 # 2. expression data
-expression.data <- read.csv('./Umi_dedup/20201107_ATLANTIS_raw_readcount_dedup_FINAL.csv', header = TRUE)%>%
-  tibble::column_to_rownames("Gene")%>%
-  dplyr::select(c(master.Table$GenomeScan_ID))%>%
+expression.data <- read.csv(file.path(conf$data_path, "Umi_dedup/20201107_ATLANTIS_raw_readcount_dedup_FINAL.csv"), header = TRUE) %>%
+  tibble::column_to_rownames("Gene") %>%
+  dplyr::select(c(master.Table$GenomeScan_ID)) %>%
   as.matrix()
 
 # 3. DE analysis season + asthma - main model 
@@ -66,17 +70,17 @@ de_result_seasons <- topTags(qlf_seasons, n = nrow(DGEL))$table %>%
   tibble::rownames_to_column("Gene") %>%
   left_join(all_new_gene, by = c("Gene" = "ensembl_gene_id"))
 
-# write.csv(de_result_seasons, './Season/Season_new_date/DE_genes_15Nov_winter_spring.csv', row.names = FALSE)
+# write.csv(de_result_seasons, file.path(conf$data_path, "Season/Season_new_date/DE_genes_15Nov_winter_spring.csv"), row.names = FALSE)
 
 de_result_asthma <-  topTags(qlf_asthma, n = nrow(DGEL))$table %>%
   tibble::rownames_to_column("Gene") %>%
   left_join(all_new_gene, by = c("Gene" = "ensembl_gene_id"))
 
-# write.csv(de_result_asthma, './Season/Season_new_date/DE_genes_15Nov_asthma.csv', row.names = FALSE)
+# write.csv(de_result_asthma, file.path(conf$data_path, "Season/Season_new_date/DE_genes_15Nov_asthma.csv"), row.names = FALSE)
 
 
 ## Volcano plot 
-de_result_seasons <- read.csv("./Season/Season_new_date/DE_genes_15Nov_winter_spring.csv")
+de_result_seasons <- read.csv(file.path(conf$data_path, "Season/Season_new_date/DE_genes_15Nov_winter_spring.csv"))
 
 plt <- ggplot(data = de_result_seasons, aes(x=logFC, y = -log10(FDR))) +
   geom_point(aes(color= ifelse((FDR < 0.05)&(logFC>0), "#B4251A", ifelse((FDR < 0.05)&(logFC<0),"#163A7D", 'gray')))) + 
@@ -103,17 +107,17 @@ plt <- ggplot(data = de_result_seasons, aes(x=logFC, y = -log10(FDR))) +
         legend.key = element_rect(fill = "white"))+
   xlim(-1.8,2.5)
 
-png("./Season/Season_new_date/plots/Volcano_seasons_15Nov.png", width = 1200, height = 800, res = 150)
+png(file.path(conf$data_path, "Season/Season_new_date/plots/Volcano_seasons_15Nov.png"), width = 1200, height = 800, res = 150)
 print(plt)
 dev.off()
 
-saveRDS(plt, "./Season/Season_new_date/plots/Volcano_seasons_15Nov.rds")
+saveRDS(plt, file.path(conf$data_path, "Season/Season_new_date/plots/Volcano_seasons_15Nov.rds"))
 
 ## 4. DE analysis - Check model corrected for season AND ciliated cells 
 
 # add cell types:
 master.Table.cell.types <- master.Table %>%
-  left_join(cell_types <- read.csv("./Season/cell_types/CIBERSORT.proportions.csv", row.names = "X") %>%
+  left_join(cell_types <- read.csv(file.path(conf$data_path, "Season/cell_types/CIBERSORT.proportions.csv"), row.names = "X") %>%
               t() %>%
               as.data.frame() %>%
               tibble::rownames_to_column("Sample") , by = c("GenomeScan_ID" = "Sample"))
@@ -153,21 +157,21 @@ summary(decideTests(qlf_asthma_season_ciliated_corrected))
 de_result_asthma_season_ciliated_corrected <- topTags(qlf_asthma_season_ciliated_corrected, n = nrow(DGEL))$table %>%
   tibble::rownames_to_column("Gene") %>%
   left_join(all_new_gene, by = c("Gene" = "ensembl_gene_id")) %>%
-  write.csv("./Season/Season_new_date/DE_genes_15Nov_asthma_season_ciliated_cor.csv", row.names = FALSE)
+  write.csv(file.path(conf$data_path, "Season/Season_new_date/DE_genes_15Nov_asthma_season_ciliated_cor.csv"), row.names = FALSE)
   
 
 ## 5. DE analysis - Check model corrected ONLY for ciliated cells 
 
 # add cell types:
 master.Table.cell.types <- master.Table %>%
-  left_join(cell_types <- read.csv("./Season/cell_types/CIBERSORT.proportions.csv", row.names = "X") %>%
+  left_join(cell_types <- read.csv(file.path(conf$data_path, "Season/cell_types/CIBERSORT.proportions.csv"), row.names = "X") %>%
               t() %>%
               as.data.frame() %>%
               tibble::rownames_to_column("Sample") , by = c("GenomeScan_ID" = "Sample"))
 
 # add cell types:
 master.Table.cell.types <- master.Table %>%
-  left_join(cell_types <- read.csv("./Season/cell_types/CIBERSORT.proportions.csv", row.names = "X") %>%
+  left_join(cell_types <- read.csv(file.path(conf$data_path, "Season/cell_types/CIBERSORT.proportions.csv"), row.names = "X") %>%
               t() %>%
               as.data.frame() %>%
               tibble::rownames_to_column("Sample") , by = c("GenomeScan_ID" = "Sample"))
@@ -191,6 +195,6 @@ summary(decideTests(qlf_asthma_ciliated_corrected))
 de_result_asthma_ciliated_corrected <- topTags(qlf_asthma_ciliated_corrected, n = nrow(DGEL))$table %>%
   tibble::rownames_to_column("Gene") %>%
   left_join(all_new_gene, by = c("Gene" = "ensembl_gene_id")) %>%
-  write.csv("./Season/Season_new_date/DE_genes_15Nov_asthma_ciliated_cor.csv", row.names = FALSE)
+  write.csv(file.path(conf$data_path, "Season/Season_new_date/DE_genes_15Nov_asthma_ciliated_cor.csv"), row.names = FALSE)
 
 

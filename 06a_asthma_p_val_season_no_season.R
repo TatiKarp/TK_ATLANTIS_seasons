@@ -5,9 +5,10 @@
 library(duckplyr)
 library(grid)
 library(ggplot2)
+library(config)
 
-
-setwd("~/Work/RP2/ATLANTIS")
+# location 
+conf <- config::get()
 
 ######## Compare p-values ###########
 
@@ -37,8 +38,8 @@ create_compare_df <- function(df_one, df_two, name_one, name_two) {
         
 ## 1. Compare models with and without seasons 
 
-de.result.asthma.seasons <- read.csv('./Season/Season_new_date/DE_genes_15Nov_asthma.csv')
-de.result.asthma <- read.csv('./Umi_dedup/Dif_expr/DE.genes.ATLANTIS.csv')
+de.result.asthma.seasons <- read.csv(file.path(conf$data_path, "Season/Season_new_date/DE_genes_15Nov_asthma.csv"))
+de.result.asthma <- read.csv(file.path(conf$data_path, "Umi_dedup/Dif_expr/DE.genes.ATLANTIS.csv"))
 
 comparison_df <- create_compare_df(de.result.asthma, de.result.asthma.seasons, "asthma", "season_asthma")
 
@@ -68,7 +69,7 @@ plt <- ggplot(data=comparison_df%>%
         legend.text = element_text(size = rel(1.5)), 
         axis.title.x = element_text(size = rel(1.5)),
         axis.title.y = element_text(size = rel(1.5)))
-png("./Season/Season_new_date/plots/FDR_asthma_vs_asthma+season_dot_plot.png", width = 1400, height = 800, res = 150)
+png(file.path(conf$data_path, "Season/Season_new_date/plots/FDR_asthma_vs_asthma+season_dot_plot.png"), width = 1400, height = 800, res = 150)
 print(plt)
 dev.off()
 
@@ -105,16 +106,16 @@ plt <- ggplot(comparison_df_sign_longer, aes(x = model, y = FDR)) +
         legend.position = "none")+
   guides(color = guide_legend(nrow=2,byrow=TRUE))
 
-png("./Season/Season_new_date/plots/FDR_asthma_vs_asthma+season_paired_plot.png", width = 1000, height = 800, res = 150)
+png(file.path(conf$data_path, "Season/Season_new_date/plots/FDR_asthma_vs_asthma+season_paired_plot.png"), width = 1000, height = 800, res = 150)
 print(plt)
 dev.off()
 
-save(plt, file = "./Season/Season_new_date/plots/FDR_asthma_vs_asthma+season_paired_plot.Rdata")
+save(plt, file = file.path(conf$data_path, "Season/Season_new_date/plots/FDR_asthma_vs_asthma+season_paired_plot.Rdata"))
 
 ## 2. Compare models with seasons AND ciliated vs without seasons and ciliated
 
-de.result.asthma.seasons.ciliated <- read.csv('./Season/Season_new_date/DE_genes_15Nov_asthma_season_ciliated_cor.csv')
-de.result.asthma <- read.csv('./Umi_dedup/Dif_expr/DE.genes.ATLANTIS.csv')
+de.result.asthma.seasons.ciliated <- read.csv(file.path(conf$data_path, "Season/Season_new_date/DE_genes_15Nov_asthma_season_ciliated_cor.csv"))
+de.result.asthma <- read.csv(file.path(conf$data_path, "./Umi_dedup/Dif_expr/DE.genes.ATLANTIS.csv"))
 comparison_df <- create_compare_df(de.result.asthma, de.result.asthma.seasons.ciliated, "asthma", "season_ciliated_asthma")
 
 #plot 
@@ -136,12 +137,12 @@ plt <- ggplot(comparison_df %>%
         legend.text = element_text(size = rel(1.5)), 
         axis.title.x = element_text(size = rel(1.5)),
         axis.title.y = element_text(size = rel(1.5)))
-png("./Season/Season_new_date/plots/FDR_asthma_vs_asthma+season+ciliated_dot_plot.png", width = 1400, height = 800, res = 150)
+png(file.path(conf$data_path, "Season/Season_new_date/plots/FDR_asthma_vs_asthma+season+ciliated_dot_plot.png"), width = 1400, height = 800, res = 150)
 print(plt)
 dev.off()
 
 ## 3. Compare models with seasons vs with seasons AND ciliated 
-comparison_df <- create_compare_df( de.result.asthma.seasons, de.result.asthma.seasons.ciliated, "asthma_seasons", "season_ciliated_asthma")
+comparison_df <- create_compare_df(de.result.asthma.seasons, de.result.asthma.seasons.ciliated, "asthma_seasons", "season_ciliated_asthma")
 
 #plot 
 plt <- ggplot(comparison_df %>%
@@ -162,12 +163,12 @@ plt <- ggplot(comparison_df %>%
         legend.text = element_text(size = rel(1.5)), 
         axis.title.x = element_text(size = rel(1.5)),
         axis.title.y = element_text(size = rel(1.5)))
-png("./Season/Season_new_date/plots/FDR_asthma+season_vs_asthma+season+ciliated_dot_plot.png", width = 1400, height = 800, res = 150)
+png(file.path(conf$data_path, "Season/Season_new_date/plots/FDR_asthma+season_vs_asthma+season+ciliated_dot_plot.png"), width = 1400, height = 800, res = 150)
 print(plt)
 dev.off()
 
 ## 4. Compare models with ciliated vs with seasons AND ciliated 
-de.result.asthma.ciliated <- read.csv("./Season/Season_new_date/DE_genes_15Nov_asthma_ciliated_cor.csv")
+de.result.asthma.ciliated <- read.csv(file.path(conf$data_path, "Season/Season_new_date/DE_genes_15Nov_asthma_ciliated_cor.csv"))
 comparison_df <- create_compare_df( de.result.asthma.ciliated, de.result.asthma.seasons.ciliated, "asthma_cilited", "season_ciliated_asthma") %>%
   left_join(de.result.asthma.ciliated %>%
               dplyr::select(c(Gene, external_gene_name)), by = c("Gene" = "Gene"))

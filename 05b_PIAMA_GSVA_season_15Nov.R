@@ -11,23 +11,26 @@ library(GSVA)
 library(matrixStats)
 library(ggpubr)
 library(rstatix)
+library(config)
 
-setwd("~/Work/RP2/ATLANTIS")
+# location 
+conf <- config::get()
 
-PIAMA_gsva_raw <- read.csv('./Season/replication_PIAMA/PIAMA_gsva_scores.csv', row.names = 'X')%>%
+# load data
+PIAMA_gsva_raw <- read.csv(file.path(conf$data_path, "Season/replication_PIAMA/PIAMA_gsva_scores.csv"), row.names = 'X') %>%
   tibble::rownames_to_column('Sample')
 
-PIAMA_dates <- read_sav('./Season/replication_PIAMA/datesage16.sav')%>%
+PIAMA_dates <- read_sav(file.path(conf$data_path, "Season/replication_PIAMA/datesage16.sav")) %>%
   mutate(ID = as.character(ID))
 
-pheno_PIAMA <- read.csv('./Season/replication_PIAMA/piama_rnaseq_subjects.csv', sep = ';')%>%
+pheno_PIAMA <- read.csv(file.path(conf$data_path, "Season/replication_PIAMA/piama_rnaseq_subjects.csv"), sep = ';') %>%
   mutate(ID_numb = substring(subject_ID, 1,5))
 
 ### update IDs 
 piama_ts_newid<- function(sampleid)
   ## transform old_sampleid to new_sampleid
 {
-  key<- read.csv("./Season/replication_PIAMA/Keyid.csv")
+  key<- read.csv(file.path(conf$data_path, "Season/replication_PIAMA/Keyid.csv"))
   nindex<-seq(1,length(sampleid))
   index<- match(sampleid,key[,1])
   index.c<- cbind(index,nindex); 
@@ -56,7 +59,7 @@ PIAMA_gsva <- PIAMA_gsva%>%
          week_day = weekdays(pdate))  
 
 #### upload ATLANTIS season genes
-DE_ATLANTIS_seasons<-read.csv('./Season/Season_new_date/DE_genes_15Nov_winter_spring.csv')
+DE_ATLANTIS_seasons<-read.csv(file.path(conf$data_path, "Season/Season_new_date/DE_genes_15Nov_winter_spring.csv"))
 
 
 #### determine gene sets (up and down)
@@ -64,10 +67,10 @@ geneSets <- list(Up_genes = DE_ATLANTIS_seasons[DE_ATLANTIS_seasons$logFC>0 & DE
                  Down_genes = DE_ATLANTIS_seasons[DE_ATLANTIS_seasons$logFC<0 & DE_ATLANTIS_seasons$FDR<0.05,]$Gene)
 
 
-master.Table <- read.csv("./Season/Season_new_date/ATLANTIS_master_table_seasons_15Nov.csv")
+master.Table <- read.csv(file.path(conf$data_path, "Season/Season_new_date/ATLANTIS_master_table_seasons_15Nov.csv"))
 
-expression.data.ATLANTIS <- read.csv('./Umi_dedup/20201107_ATLANTIS_raw_readcount_dedup_FINAL.csv', header =TRUE)%>%
-  tibble::column_to_rownames("Gene")%>%
+expression.data.ATLANTIS <- read.csv(file.path(conf$data_path, "Umi_dedup/20201107_ATLANTIS_raw_readcount_dedup_FINAL.csv"), header =TRUE) %>%
+  tibble::column_to_rownames("Gene") %>%
   dplyr::select(c(master.Table$GenomeScan_ID))%>%
   as.matrix()
 
@@ -147,7 +150,7 @@ up <- ggplot(Up_genes_plot, aes(x = Study_name, y = GSVA_value))+
   expand_limits(y = max(Up_genes_plot$GSVA_value) * 1.1)
 
 
-save(up, file = "./Season/Season_new_date/plots/up_PIAMA_ATLANTIS_seasons_GSVA.Rdata")
+save(up, file = file.path(conf$data_path, "Season/Season_new_date/plots/up_PIAMA_ATLANTIS_seasons_GSVA.Rdata"))
 
 ### plot down genes:
 
@@ -194,7 +197,7 @@ down <- ggplot(Down_genes_plot, aes(x = Study_name, y = GSVA_value))+
   expand_limits(y = max(Down_genes_plot$GSVA_value) * 1.1)
 
 
-save(down, file = "./Season/Season_new_date/plots/down_PIAMA_ATLANTIS_seasons_GSVA.Rdata")
+save(down, file = file.path(conf$data_path, "Season/Season_new_date/plots/down_PIAMA_ATLANTIS_seasons_GSVA.Rdata"))
 
 up_down <- ggarrange(up,down,
                      labels = c("A", "B"),
@@ -203,7 +206,7 @@ up_down <- ggarrange(up,down,
                      nrow = 2)
 annotated_figure <- annotate_figure(up_down,
                                     left = text_grob("GSVA value",  rot = 90, face = "bold"))
-png("./Season/Season_new_date/plots/GSVA_piama_ATLANTIS_all.png", width = 1100, height = 1200,res = 150)
+png(file.path(conf$data_path, "Season/Season_new_date/plots/GSVA_piama_ATLANTIS_all.png"), width = 1100, height = 1200,res = 150)
 print(annotated_figure)
 dev.off()
 
@@ -254,13 +257,13 @@ down <- ggplot(PIAMA_gsva, aes (x = pdate, y = Down_genes))+
 
 all <- ggarrange(up + rremove("xlab"), down,
                  common.legend = TRUE,
-                 legend = "right",
+                 legend = "bottom",
                  nrow = 2)
 
-save(all, file = "./Season/Season_new_date/plots/Date_vs_gsva_up_down_PIAMA.Rdata")
+save(all, file = file.path(conf$data_path, "Season/Season_new_date/plots/Date_vs_gsva_up_down_PIAMA.Rdata"))
 
 annotated_figure <- annotate_figure(all,
-                                    left = text_grob("GSVA value",  rot = 90, face = "bold"))
-png(paste0("./Season/Season_new_date/plots/PIAMA_GSVA_vs_Date.png"), width = 1500, height = 1400, res = 150)
+                                    left = text_grob("GSVA score",  rot = 90, face = "bold"))
+png(file.path(conf$data_path, "Season/Season_new_date/plots/PIAMA_GSVA_vs_Date.png"), width = 1500, height = 1400, res = 150)
 print(annotated_figure)
 dev.off()

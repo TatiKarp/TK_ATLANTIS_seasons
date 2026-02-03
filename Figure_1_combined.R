@@ -1,13 +1,19 @@
-
 # This script will create figure one for paper:
-# combinig selection of the season and volcanoplot 
+# combining selection of the season and volcano plot 
 
 library(patchwork)
 library(lubridate)
+library(dplyr)
+library(ggplot2)
+library(ggpubr)
+library(patchwork)
+library(config)
 
-setwd("~/Work/RP2/ATLANTIS")
+# location 
+conf <- config::get()
 
-master.Table <- read.csv("./Season/Season_new_date/ATLANTIS_master_table_seasons_new.csv")
+# load data
+master.Table <- read.csv(file.path(conf$data_path, "Season/Season_new_date/ATLANTIS_master_table_seasons_new.csv"))
 
 ## define first day of each month 
 st <- as.Date("2015-01-01")
@@ -23,7 +29,7 @@ for (day_n in first_month) {
 }
 
 # Load DE result with 15 days shift (from code ~/ATLANTIS_project/Season/Season_new_date/seasons_DE_15_shift.R)
-load("./Season/Season_new_date/15days_shift.Rdata")
+load(file.path(conf$data_path, "Season/Season_new_date/15days_shift.Rdata"))
 
 dates_genes_df <- data.frame(Date = as.Date(breaks_df[1:length(n_deg)]-1, origin = "2015-01-01"),
                              n_gene = results_df$n_total, 
@@ -65,32 +71,40 @@ figure1 <- ggplot(dates_genes_df, aes(x = Date_start)) +
       legend.text=element_text(size=12),
       legend.key = element_rect(fill = "white"))
 
-png("./Season/Season_new_date/plots/Figure1_linear.png", width = 1400, 
+png(file.path(conf$data_path, "Season/Season_new_date/plots/Figure1_linear.png"), width = 1400, 
     height = 1000,
     res = 150)
 print(figure1)
 dev.off()
 
 
-volcano <- readRDS("./Season/Season_new_date/plots/Volcano_seasons_15Nov.rds")
+volcano <- readRDS(file.path(conf$data_path, "Season/Season_new_date/plots/Volcano_seasons_15Nov.rds"))
 #print(volcano)
 
 ## combine 2 plots
-combined_fig1 <- ggarrange(figure1, volcano,
-                           ncol = 1,
-                           nrow = 2,
-                           heights = c(2.25, 2.5),
-                           labels = c("A", "B"),
-                           label.x = 1,      # Horizontal position (0 = left, 1 = right)
-                           label.y = 1,      # Vertical position (0 = bottom, 1 = top)
-                           hjust = 2.5,     # Fine-tune horizontal justification
-                           vjust = 2.5) 
+layout_design <- "
+  A
+  B
+" 
+
+combined_plot <- figure1 + volcano +
+  plot_layout(
+    design = layout_design,
+    heights = c(2.25, 2.5) # Adjust to make top plots short
+
+  ) +
+  plot_annotation(
+    tag_levels = list(c("A", "B"))
+  ) &
+  theme(
+    plot.tag = element_text(face = "bold", size = 16),
+    legend.position = "bottom"
+  )
 
 
-
-png("./Season/Season_new_date/plots/Figure1_linear_volcano.png", 
-    width = 1200, 
+png(file.path(conf$data_path, "Season/Season_new_date/plots/Figure1_linear_volcano.png"), 
+    width = 1300, 
     height = 1700,
     res = 150)
-print(combined_fig1)
+print(combined_plot)
 dev.off()

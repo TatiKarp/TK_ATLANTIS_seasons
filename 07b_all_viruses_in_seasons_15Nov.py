@@ -10,13 +10,21 @@ This script will check the presence of different viruses in all atlantis samples
 # %%
 import csv
 import os
+import yaml
+
+# Load config.yml
+with open("config.yml", 'r') as stream:
+    config = yaml.safe_load(stream)
+    
+# Get the path (default section)
+data_path = config['default']['data_path']
 
 #%%
 # list all the files 
-microb_dir = "/Users/tatiana/Work/RP2/ATLANTIS/Microbes/Output/nasal_brushes_score_check/"
+microb_dir = os.path.join(data_path, "Microbes/Output/nasal_brushes_score_check/")
 files = os.listdir(microb_dir)
 
-master_table = "/Users/tatiana/Work/RP2/ATLANTIS/Season/Season_new_date/ATLANTIS_master_table_seasons_15Nov.csv"
+master_table = os.path.join(data_path, "Season/Season_new_date/ATLANTIS_master_table_seasons_15Nov.csv")
 
 samples_list = []
 sample_season = {}
@@ -28,7 +36,6 @@ with open (master_table, 'r') as csvfile:
         
 # %%
 # check viruses in a sample 
-#file = "/Users/tatiana/Work/RP2/ATLANTIS/Microbes/Output/nasal_brushes_score_check/103893-001-373_z_score_check.csv"
 
 all_taxa =  {} # all unique taxa IDs (both level 1 and 2) with z-scores >3 in a least 1 sample
 all_samples = {}

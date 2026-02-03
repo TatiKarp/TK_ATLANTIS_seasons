@@ -3,13 +3,17 @@ library(dplyr)
 library(lubridate)
 library(data.table)
 library(tableone)
+library(config)
 
-setwd("~/Work/RP2/ATLANTIS")
 
-master.Table <- read.csv("./Season/Season_new_date/ATLANTIS_master_table_seasons_15Nov.csv")
+# location 
+conf <- config::get()
 
-big_master_table <-  read.csv('./atlantis_patient_data.csv', header =TRUE, na.strings=c("","NA"))
-additional_data <- read.csv('./Umi_dedup/Dif_expr/Asthma_groups/clinicaldata_bhr_feno_mld.csv', header =TRUE, na.strings=c("","NA"))%>%
+# data
+master.Table <- read.csv(file.path(conf$data_path,"Season/Season_new_date/ATLANTIS_master_table_seasons_15Nov.csv"))
+
+big_master_table <-  read.csv(file.path(conf$data_path, "atlantis_patient_data.csv"), header =TRUE, na.strings=c("","NA"))
+additional_data <- read.csv(file.path(conf$data_path, "Umi_dedup/Dif_expr/Asthma_groups/clinicaldata_bhr_feno_mld.csv"), header =TRUE, na.strings=c("","NA"))%>%
   dplyr::select(-c(X,FENRES, MLD_ratio))
 clinical_table <- big_master_table[,c('PT','PACKNO','BMI','PHADRES', 'DUR_DIS','AGE_DIAG',
                                       'B_FEV1F','GINA', 'NUM_EX','LAMA','BIO','SYS_COR',
@@ -48,5 +52,5 @@ tabtotal <- CreateTableOne(vars = var_for_table, strata = "new_seasons" , data =
 
 Final_statistics <- print(tabtotal, nonnormal = non_normally, exact = "stage", formatOptions = list(big.mark = ","), quote = FALSE, noSpaces = TRUE)
 
-write.csv(Final_statistics, file = "./Season/Season_new_date/Clinical_characteristics_seasons.csv")
+write.csv(Final_statistics, file = file.path(conf$data_path, "Season/Season_new_date/Clinical_characteristics_seasons.csv"))
 

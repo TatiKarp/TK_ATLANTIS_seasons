@@ -1,28 +1,41 @@
 
 library(ggpubr)
+library(patchwork)
+library(config)
 
-setwd("~/Work/RP2/ATLANTIS")
+# location 
+conf <- config::get()
 
-load("./Season/Season_new_date/plots/FDR_asthma_vs_asthma+season_paired_plot.Rdata")
-load("./Season/Season_new_date/plots/CIBERSORT_seasons_15Nov.Rdata")
+# load data
+load(file.path(conf$data_path, "Season/Season_new_date/plots/FDR_asthma_vs_asthma+season_paired_plot.Rdata"))
+load(file.path(conf$data_path, "Season/Season_new_date/plots/CIBERSORT_seasons_15Nov.Rdata"))
 
-plt_narrow <- plt + 
-  theme(plot.margin = unit(c(0.5, 2, 0.5, 2), "cm"))  # top, right, bottom, left
-figure4_combined_gg <- ggarrange(plt_narrow,
-                                 bxp_seasons, 
-                                 ncol = 1,
-                                 nrow = 2,
-                                 heights = c(2.5, 3),
-                                 labels = c("A", "B"),
-                                 label.x = 1,      # Horizontal position (0 = left, 1 = right)
-                                 label.y = 1,      # Vertical position (0 = bottom, 1 = top)
-                                 hjust = 2.5,     # Fine-tune horizontal justification
-                                 vjust = 2.5 )
+plt_nolegend <- plt + guides(fill = "none", color = "none", linetype = "none")
 
 
-png("./Season/Season_new_date/plots/Figure4_combined.png", 
+layout_design <- "
+  #A#
+  BBB
+" 
+
+combined_plot <- plt_nolegend + bxp_seasons +
+  plot_layout(
+    design = layout_design,
+    heights = c(2.25, 2.5),
+    widths = c(0.1,2,0.1) # Adjust to make top plots short
+    ) +
+  plot_annotation(
+    tag_levels = list(c("A", "B"))
+  ) &
+  theme(
+    plot.tag = element_text(face = "bold", size = 16),
+    legend.position = "bottom"
+  )
+
+
+png(file.path(conf$data_path, "Season/Season_new_date/plots/Figure4_combined.png"), 
     width = 1000, 
     height = 1200,
     res = 150)
-print(figure4_combined_gg)
+print(combined_plot)
 dev.off()

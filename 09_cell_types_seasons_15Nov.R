@@ -4,23 +4,25 @@ library(dplyr)
 library(tibble)
 library(ggplot2)
 library(lubridate)
+library(config)
 
+# location 
+conf <- config::get()
 
-setwd("~/Work/RP2/ATLANTIS")
 ## upload source Cibersort
-source("~/Work/RP2/ATLANTIS/Deconvolution/Deconvolution_Jos/CIBERSORT.R", verbose=TRUE)
+source(file.path(conf$data_path, "Deconvolution/Deconvolution_Jos/CIBERSORT.R"), verbose=TRUE)
 
 ## upload signature file 
 # matrix from Tessa 
-C <- read.csv("./Season/cell_types/CIBERSORTx_nose_subsampled_matrix_max200cells_ENSG_inferred_phenoclasses.CIBERSORTx_nose_subsampled_matrix_max200cells_ENSG_inferred_refsample.bm.K999.txt", sep='\t')
+C <- read.csv(file.path(conf$data_path, "Season/cell_types/CIBERSORTx_nose_subsampled_matrix_max200cells_ENSG_inferred_phenoclasses.CIBERSORTx_nose_subsampled_matrix_max200cells_ENSG_inferred_refsample.bm.K999.txt"), sep='\t')
 rownames(C)<-C$NAME
 C <- C%>%
   dplyr::select(-NAME)
 
 ## bulk data preparation
-master.Table <- read.csv("./Season/Season_new_date/ATLANTIS_master_table_seasons_15Nov.csv")
+master.Table <- read.csv(file.path(conf$data_path, "Season/Season_new_date/ATLANTIS_master_table_seasons_15Nov.csv"))
 
-expression.data <- read.csv("./Umi_dedup/20201107_ATLANTIS_raw_readcount_dedup_FINAL.csv", header =TRUE)%>%
+expression.data <- read.csv(file.path(conf$data_path, "Umi_dedup/20201107_ATLANTIS_raw_readcount_dedup_FINAL.csv"), header =TRUE) %>%
   tibble::column_to_rownames("Gene")%>%
   dplyr::select(c(master.Table$GenomeScan_ID))
 
@@ -45,7 +47,7 @@ Ref = C[keep,]
 ##############################################################
 ##################### run Cibersort ##########################
 
-xf <- "./Season/cell_types/reference.tsv"
+xf <- file.path(conf$data_path, "Season/cell_types/reference.tsv")
 Ref %>%
   as.data.frame() %>%
   tibble::rownames_to_column("rownames")%>%
@@ -53,7 +55,7 @@ Ref %>%
     file = xf
   )
 
-yf <-  "./Season/cell_types/mixture.tsv"
+yf <-  file.path(conf$data_path, "Season/cell_types/mixture.tsv")
 bulk %>%
   as.data.frame() %>%
   tibble::rownames_to_column("rownames") %>%
@@ -65,12 +67,12 @@ RESULTS <- CIBERSORT(sig_matrix = xf, mixture_file = yf, QN = FALSE, perm=100)
 res.cibersort <- t(RESULTS[,1:(ncol(RESULTS)-3)]) %>%
   as.data.frame()
 
-write.csv(res.cibersort, "./Season/cell_types/CIBERSORT.proportions.csv", row.names = T, quote = F)
+write.csv(res.cibersort, file.path(conf$data_path, "Season/cell_types/CIBERSORT.proportions.csv"), row.names = T, quote = F)
 
 ##############################################################
 ## check edgeR normalization! for the CIBERSORT
 
-CIBESORT_ATL <- read.csv("./Season/cell_types/CIBERSORT.proportions.csv") %>%
+CIBESORT_ATL <- read.csv(file.path(conf$data_path, "Season/cell_types/CIBERSORT.proportions.csv")) %>%
   column_to_rownames("X") %>%
   t() %>%
   as.data.frame() %>%
@@ -160,11 +162,14 @@ bxp_seasons <- CIBESORT_ATL_long %>%
   stat_pvalue_manual(stat.test.CIBER_season, label = "p_adj = {p.adj}", xmin = 'xmin', xmax ='xmax',size = 3, remove.bracket = TRUE)
 #annotate("text", x = Inf, y = 1, hjust = 1, vjust = 0, label = "wilcox-test, FDR adjusted")
 
-png('./Season/Season_new_date/plots/CIBERSORT_seasons_15Nov.png', res = 150,  width = 1200, height = 800)
+png(file.path(conf$data_path, "Season/Season_new_date/plots/CIBERSORT_seasons_15Nov.png"), 
+    res = 150, 
+    width = 1200, 
+    height = 800)
 print(bxp_seasons)
 dev.off()
 
-save(bxp_seasons, file = "./Season/Season_new_date/plots/CIBERSORT_seasons_15Nov.Rdata")
+save(bxp_seasons, file = file.path(conf$data_path, "Season/Season_new_date/plots/CIBERSORT_seasons_15Nov.Rdata"))
 
 
 ## get medians, IQR, Q1 and Q3 from the table 

@@ -4,17 +4,20 @@
 library(dplyr)
 library(edgeR)
 library(lubridate)
+library(config)
 
-setwd("~/Work/RP2/ATLANTIS")
+# location 
+conf <- config::get()
 
-de.results.2.seasons <-  read.csv('./Season/Season_new_date/DE_genes_15Nov_winter_spring.csv')
+# load data
+de.results.2.seasons <-  read.csv(file.path(conf$data_path, "Season/Season_new_date/DE_genes_15Nov_winter_spring.csv"))
 
-master.Table <- read.csv("./Season/Season_new_date/ATLANTIS_master_table_seasons_15Nov.csv") %>%
+master.Table <- read.csv(file.path(conf$data_path, "Season/Season_new_date/ATLANTIS_master_table_seasons_15Nov.csv")) %>%
   mutate(VISIT.DATE = as.Date(VISIT.DATE))
 
 # expression data
-expression.data <- read.csv('./Umi_dedup/20201107_ATLANTIS_raw_readcount_dedup_FINAL.csv', header =TRUE)%>%
-  tibble::column_to_rownames("Gene")%>%
+expression.data <- read.csv(file.path(conf$data_path, "Umi_dedup/20201107_ATLANTIS_raw_readcount_dedup_FINAL.csv"), header =TRUE) %>%
+  tibble::column_to_rownames("Gene") %>%
   dplyr::select(c(master.Table$GenomeScan_ID))%>%
   as.matrix()
 
@@ -96,7 +99,7 @@ figure_all <- ggarrange(plt_up, plt_down,
                         common.legend = TRUE,
                         legend = "bottom",
                         ncol = 2)
-png("./Season/Season_new_date/plots/top_genes_vs_date_supl3.png", width=1200, height=1500, res = 150)
+png(file.path(conf$data_path, "Season/Season_new_date/plots/top_genes_vs_date_supl3.png"), width=1200, height=1500, res = 150)
 print(figure_all)
 dev.off()
 

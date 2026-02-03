@@ -5,14 +5,16 @@ library(tibble)
 library(pheatmap)
 library(ggrepel)
 library(lubridate)
+library(config)
 
+# location 
+conf <- config::get()
 
-setwd("/Users/tatiana/Work/RP2/ATLANTIS")
-
-master.Table <- read.csv("./Season/Season_new_date/ATLANTIS_master_table_seasons_new.csv")
+# load files
+master.Table <- read.csv(file.path(conf$data_path,"/Season/Season_new_date/ATLANTIS_master_table_seasons_new.csv"))
 
 # expression data
-expression.data <- read.csv('./Umi_dedup/20201107_ATLANTIS_raw_readcount_dedup_FINAL.csv', header =TRUE)%>%
+expression.data <- read.csv(file.path(conf$data_path,"/Umi_dedup/20201107_ATLANTIS_raw_readcount_dedup_FINAL.csv"), header = TRUE) %>%
   tibble::column_to_rownames("Gene")%>%
   dplyr::select(c(master.Table$GenomeScan_ID))%>%
   as.matrix()
@@ -67,11 +69,11 @@ for (i in 1:(length(breaks_df)/2)) {
   print(total_n_diff_genes)
   }
 
-save(n_deg, results_df, file = "./Season/Season_new_date/15days_shift.Rdata")
+save(n_deg, results_df, file = file.path(conf$data_path,"Season/Season_new_date/15days_shift.Rdata"))
 
 # plot N of genes vs date 
 
-load("./Season/Season_new_date/15days_shift")
+load(file.path(conf$data_path,"Season/Season_new_date/15days_shift"))
 dates_genes_df <- data.frame(Date = as.Date(breaks_df[1:length(n_deg)]-1, origin = "2015-01-01"),
                              n_gene = n_deg)
 
@@ -135,7 +137,7 @@ round_date_genes_plt <- ggplot(dates_genes_df_polar, aes(Date, n_gene)) +
         legend.text=element_text(size=8),
         legend.key = element_rect(fill = "white")) 
 
-png('./Season/Season_new_date/plots/circled_date_genes.png', res = 150,  width = 1200, height = 800)
+png(file.path(conf$data_path,"Season/Season_new_date/plots/circled_date_genes.png"), res = 150,  width = 1200, height = 800)
 print(round_date_genes_plt)
 dev.off()
 
@@ -148,6 +150,7 @@ legend <- ggplot(fake_legend_df, aes(x = x, fill = group)) +
   scale_fill_manual(values = c("winter_spring" = "#BFCCB5", "summer-autumn" = "#FFA559")) +
   guides(fill = guide_legend(title = "season"))
 
-png('./Season/Season_new_date/plots/legend_circled_date_genes.png', res = 150,  width = 1200, height = 800)
+png(file.path(conf$data_path, "./Season/Season_new_date/plots/legend_circled_date_genes.png"), res = 150,  width = 1200, height = 800)
 print(legend)
 dev.off()
+

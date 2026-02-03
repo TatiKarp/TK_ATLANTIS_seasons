@@ -3,24 +3,26 @@ library(dplyr)
 library(edgeR)
 library(haven)
 library(lubridate)
+library(config)
 
-setwd("~/Work/RP2/ATLANTIS")
+# location 
+conf <- config::get()
 
 ## upload PIAMA expression ##
-load("./Season/replication_PIAMA/PIAMA_expression_voom.Rdata")
+load(file.path(conf$data_path, "Season/replication_PIAMA/PIAMA_expression_voom.Rdata"))
 dim(data.piama)
 
-PIAMA_dates <- read_sav("./Season/replication_PIAMA/datesage16.sav") %>%
+PIAMA_dates <- read_sav(file.path(conf$data_path, "Season/replication_PIAMA/datesage16.sav")) %>%
   mutate(ID = as.character(ID))
 
-pheno_PIAMA <- read.csv("./Season/replication_PIAMA/piama_rnaseq_subjects.csv", sep = ';') %>%
+pheno_PIAMA <- read.csv(file.path(conf$data_path, "Season/replication_PIAMA/piama_rnaseq_subjects.csv"), sep = ';') %>%
   mutate(ID_numb = substring(subject_ID, 1,5))
 
 ### update IDs 
 piama_ts_newid<- function(sampleid)
   ## transform old_sampleid to new_sampleid
 {
-  key<- read.csv("./Season/replication_PIAMA/Keyid.csv")
+  key<- read.csv(file.path(conf$data_path, "Season/replication_PIAMA/Keyid.csv"))
   nindex<-seq(1,length(sampleid))
   index<- match(sampleid,key[,1])
   index.c<- cbind(index,nindex); 
@@ -73,7 +75,7 @@ tmp <- contrasts.fit(fit, contr)
 tmp <- eBayes(tmp)
 top.table <- topTable(tmp, sort.by = "P", n = Inf)
 
-write.csv(top.table,"./Season/Season_new_date/PIAMA_DE_seasons_sex_center_asthma.csv")
+write.csv(top.table, file.path(conf$data_path, "Season/Season_new_date/PIAMA_DE_seasons_sex_center_asthma.csv"))
 
 ## clinical characteristics 
 library(tableone)

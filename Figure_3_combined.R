@@ -1,38 +1,54 @@
-
 library(ggpubr)
+library(patchwork)
+library(config)
 
-setwd("~/Work/RP2/ATLANTIS")
+# location 
+conf <- config::get()
 
+# load data
+load(file.path(conf$data_path, "Season/Season_new_date/plots/up_PIAMA_ATLANTIS_seasons_GSVA.Rdata"))
+load(file.path(conf$data_path, "Season/Season_new_date/plots/down_PIAMA_ATLANTIS_seasons_GSVA.Rdata"))
+load(file.path(conf$data_path, "Season/Season_new_date/plots/Date_vs_gsva_up_down_PIAMA.Rdata"))
 
-load("./Season/Season_new_date/plots/up_PIAMA_ATLANTIS_seasons_GSVA.Rdata")
-load("./Season/Season_new_date/plots/down_PIAMA_ATLANTIS_seasons_GSVA.Rdata")
-load("./Season/Season_new_date/plots/Date_vs_gsva_up_down_PIAMA.Rdata")
-
+all <- annotate_figure(all,
+                       left = text_grob("GSVA score",  rot = 90, face = "bold"))
 up_down_combined <- ggarrange(
   up,
   down,         # Remove duplicate y-axis label for cleaner look
   ncol = 1,
   nrow = 2,
   common.legend = TRUE,           # Shared legend between up and down
-  legend = "right"               # Legend position
+  legend = "bottom"               # Legend position
 )
-figure3_combined_gg <- ggarrange(all,
-                                 up_down_combined, 
-                                 ncol = 1,
-                                 nrow = 2,
-                                 heights = c(2.5, 3),
-                                 labels = c("A", "B"),
-                                 label.x = 1,      # Horizontal position (0 = left, 1 = right)
-                                 label.y = 1,      # Vertical position (0 = bottom, 1 = top)
-                                 hjust = 2.5,     # Fine-tune horizontal justification
-                                 vjust = 2.5 )
+up_down_combined <- annotate_figure(up_down_combined,
+                                    left = text_grob("GSVA score",  rot = 90, face = "bold"))
 
-annotated_figure_3 <- annotate_figure(figure3_combined_gg,
-                                      left = text_grob("GSVA value",  rot = 90, face = "bold"))
 
-png("./Season/Season_new_date/plots/Figure3_combined.png", 
+layout_design <- "
+  #A#
+  ###
+  BBB
+"
+
+combined_plot <- all + up_down_combined +
+  plot_layout(
+    design = layout_design,
+    widths = c(1,4.5,1),   # Adjust to make right plots thin
+    heights = c(1.6, 0.1, 1.6),  # Adjust to make top plots short
+    guides = "collect"
+  ) +
+  plot_annotation(
+    tag_levels = list(c("A", "B"))
+  ) &
+  theme(
+    plot.tag = element_text(face = "bold", size = 16),
+    legend.position = "bottom"
+  )
+
+
+png(file.path(conf$data_path, "Season/Season_new_date/plots/Figure3_combined.png"), 
     width = 1100, 
     height = 1800,
     res = 150)
-print(annotated_figure_3)
+print(combined_plot)
 dev.off()

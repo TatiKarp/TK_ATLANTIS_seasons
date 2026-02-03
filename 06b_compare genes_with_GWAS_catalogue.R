@@ -1,20 +1,23 @@
 ## This script will overlap asthma genes from GWAS with genes from DE analysis
 
 library(dplyr)
-setwd("~/Work/RP2/ATLANTIS/")
+library(config)
+
+# location 
+conf <- config::get()
 
 # 1. load GWAS catalogue - only asthma related
-GWAS_catalogue <- read.csv("Multiomics/mofa_results/GWAS_catalogue/gwas_catalog_asthma.csv") %>%
+GWAS_catalogue <- read.csv(file.path(conf$data_path, "Multiomics/mofa_results/GWAS_catalogue/gwas_catalog_asthma.csv")) %>%
   filter(P.VALUE < 1e-08)
 reported_gene_id <- unique(GWAS_catalogue$REPORTED.GENE.S.)
 cleaned_reported_gene_id <- unlist(strsplit(reported_gene_id, split = ","))
 cleaned_reported_gene_id <- unique(trimws(cleaned_reported_gene_id))
 
 # 2. load DE genes
-de.result.asthma <- read.csv('./Umi_dedup/Dif_expr/DE.genes.ATLANTIS.csv')
-de.result.asthma.seasons <- read.csv('./Season/Season_new_date/DE_genes_15Nov_asthma.csv')
-de.result.asthma.ciliated <- read.csv("./Season/Season_new_date/DE_genes_15Nov_asthma_ciliated_cor.csv")
-de.result.asthma.seasons.ciliated <- read.csv('./Season/Season_new_date/DE_genes_15Nov_asthma_season_ciliated_cor.csv')
+de.result.asthma <- read.csv(file.path(conf$data_path, "Umi_dedup/Dif_expr/DE.genes.ATLANTIS.csv"))
+de.result.asthma.seasons <- read.csv(file.path(conf$data_path, "Season/Season_new_date/DE_genes_15Nov_asthma.csv"))
+de.result.asthma.ciliated <- read.csv(file.path(conf$data_path, "Season/Season_new_date/DE_genes_15Nov_asthma_ciliated_cor.csv"))
+de.result.asthma.seasons.ciliated <- read.csv(file.path(conf$data_path, "Season/Season_new_date/DE_genes_15Nov_asthma_season_ciliated_cor.csv"))
 
 overlap.a <- length(intersect(cleaned_reported_gene_id, de.result.asthma[de.result.asthma$FDR < 0.05, "hgnc_symbol"]))
 overlap.a/length(de.result.asthma[de.result.asthma$FDR < 0.05, "hgnc_symbol"])
