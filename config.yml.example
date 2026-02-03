@@ -1,0 +1,6 @@
+# config.yml.example 
+# INSTRUCTIONS: Copy this file to 'config.yml' and 
+# replace the placeholders with your actual local paths.
+
+default:
+  data_path: "path/to/your/nasal_data_folder/"
