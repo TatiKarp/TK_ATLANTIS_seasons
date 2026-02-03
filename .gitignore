@@ -1,0 +1,34 @@
+# --- Secrets & Config (Crucial!) ---
+config.yml
+.env
+.Renviron
+config.py
+secrets.py
+
+# --- Data & Outputs ---
+data/
+output/
+results/
+*.csv
+*.rds
+*.RData
+*.npy
+*.parquet
+
+# --- R Specifics ---
+.Rhistory
+.Rproj.user/
+.Ruserdata
+
+# --- Python Specifics ---
+__pycache__/        # Compiled Python files
+*.py[cod]           # Bytecode
+*$py.class          # More bytecode
+.pytest_cache/      # If you run tests
+.venv/              # Local virtual environments
+env/
+venv/
+ENV/
+
+# --- OS Specifics ---
+.DS_Store
