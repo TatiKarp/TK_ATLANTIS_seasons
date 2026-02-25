@@ -25,28 +25,36 @@ This repository contains the analysis pipeline for investigating how seasonal va
 
 ```
 TK_ATLANTIS_seasons/
-├── config.yml.example              # Template for user-specific paths and settings
 │
-├── 00_seasons_DE_15_shift.R        # DE analysis: seasonal shift (15-day window)
-├── 01_season_15Nov_baseline_table.R # Baseline characteristics table (Nov 15 split)
-├── 02_season_DE_15days.R           # DE analysis: 15-day seasonal windows
-├── 03_GSVA_seasons_vs_date.R       # GSVA scores vs. collection date
-├── 04a_seasonal_GSVA_in_allergy.R  # GSVA in allergy subgroup
-├── 04b_seasonal_GSVA_in_asthma.R   # GSVA in asthma subgroup
-├── 05a_PIAMA_DE_15Nov.R            # PIAMA replication: DE analysis
-├── 05b_PIAMA_GSVA_season_15Nov.R   # PIAMA replication: GSVA
-├── 06a_asthma_p_val_season_no_season.R  # Asthma seasonal vs. non-seasonal p-value comparison
-├── 06b_compare genes_with_GWAS_catalogue.R  # Overlap with GWAS catalogue genes
-├── 07a_viruses_in_seasons_15Nov.R  # Viral transcripts by season (R)
-├── 07b_all_viruses_in_seasons_15Nov.py  # Viral transcripts by season (Python)
-├── 08_season_15Nov_pathways.R      # Pathway enrichment across seasons
-├── 09_cell_types_seasons_15Nov.R   # Cell type deconvolution by season
+├── R/                                        # Shared utility functions
+│   └── utils_DE.R                            # edgeR pipeline helpers
 │
-├── Figure_1_combined.R             # Figure 1 assembly
-├── Figure_2_combined.R             # Figure 2 assembly
-├── Figure_3_combined.R             # Figure 3 assembly
-├── Figure_4_combined.R             # Figure 4 assembly
-└── SF1_new_top_genes_vs_date.R     # Supplementary Figure 1: top genes vs. date
+├── analysis/                                 # Analysis scripts (run in order)
+│   ├── 00_seasons_DE_15_shift.R              # DE analysis: sliding 15-day seasonal window
+│   ├── 01_season_15Nov_baseline_table.R      # Baseline characteristics table (Nov 15 split)
+│   ├── 02_season_DE_15days.R                 # DE analysis: winter-spring vs. summer-autumn
+│   ├── 03_GSVA_seasons_vs_date.R             # GSVA pathway scores vs. collection date
+│   ├── 04a_seasonal_GSVA_in_allergy.R        # Seasonal GSVA in allergy subgroup
+│   ├── 04b_seasonal_GSVA_in_asthma.R         # Seasonal GSVA in asthma subgroup
+│   ├── 05a_PIAMA_DE_15Nov.R                  # PIAMA replication: DE analysis
+│   ├── 05b_PIAMA_GSVA_season_15Nov.R         # PIAMA replication: GSVA
+│   ├── 06a_asthma_p_val_season_no_season.R   # Asthma p-value comparison: seasonal vs. non-seasonal model
+│   ├── 06b_compare_genes_with_GWAS_catalogue.R  # Overlap of DE genes with GWAS catalogue
+│   ├── 07a_viruses_in_seasons_15Nov.R        # Viral transcript levels by season (R)
+│   ├── 07b_all_viruses_in_seasons_15Nov.py   # Viral transcript survey across seasons (Python)
+│   ├── 08_season_15Nov_pathways.R            # Pathway enrichment of seasonal DE genes
+│   └── 09_cell_types_seasons_15Nov.R         # Cell type deconvolution by season
+│
+├── figures/                                  # Figure assembly scripts (run after analysis/)
+│   ├── Figure_1_combined.R                   # Figure 1
+│   ├── Figure_2_combined.R                   # Figure 2
+│   ├── Figure_3_combined.R                   # Figure 3
+│   ├── Figure_4_combined.R                   # Figure 4
+│   └── SF1_new_top_genes_vs_date.R           # Supplementary Figure 1
+│
+├── config.yml.example                        # Template for user-specific paths (commit this)
+├── config.yml                                # Local paths — DO NOT COMMIT (in .gitignore)
+└── README.md
 ```
 
 ---
@@ -101,22 +109,24 @@ Edit `config.yml` to set paths to your input data (count matrices, metadata, gen
 
 ## Running the Analysis
 
-Scripts are numbered to indicate the intended execution order. Run them sequentially from the repo root:
+Scripts in `analysis/` are numbered to indicate the intended execution order. Run them sequentially from the repo root.
 
-```r
-source("00_seasons_DE_15_shift.R")
-source("01_season_15Nov_baseline_table.R")
-source("02_season_DE_15days.R")
-# ... and so on
-```
 
 Figure scripts (`Figure_1_combined.R` etc.) depend on outputs from the numbered scripts and should be run last.
+
+Script `07b` must be run separately in Python:
+
+```bash
+python analysis/07b_all_viruses_in_seasons_15Nov.py
+```
+
+Utility functions in `R/` are sourced automatically by the analysis scripts — you do not need to run them directly.
 
 ---
 
 ## Data Availability
 
-The raw data from the ATLANTIS cohort are not included in this repository due to privacy and ethical restrictions. Access to the data can be requested via **[link or contact details]**.
+The raw data from the ATLANTIS cohort are not included in this repository due to privacy and ethical restrictions. Access to readcount table and required metadata can be requested via **[link or contact details]**.
 
 The PIAMA cohort data used in scripts `05a` and `05b` are subject to a separate data access agreement.
 
