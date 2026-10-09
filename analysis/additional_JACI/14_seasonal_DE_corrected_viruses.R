@@ -73,7 +73,7 @@ summary(decideTests(qlf_virus))
 # Up                        166
 
 # add gene names
-ensembl <- useMart("ensembl", dataset="hsapiens_gene_ensembl")
+ensembl <- useEnsembl("ensembl", dataset="hsapiens_gene_ensembl")
 gene_ids <- rownames(edger$DGEL$counts)
 all_new_gene <- getBM(attributes = c("ensembl_gene_id", "external_gene_name"),
                       filters = "ensembl_gene_id", values = gene_ids, mart = ensembl)
@@ -110,9 +110,9 @@ de_combined <- data.frame(Gene = union(de_result_seasons$Gene, de_seasons_initia
       FDR_season < 0.05 & FDR_viral < 0.05 ~ "both",
       FDR_season < 0.05 & FDR_viral > 0.05 ~ "only_season",
       FDR_season > 0.05 & FDR_viral < 0.05 ~ "only_virus",
-      .default = "none")) ##This none is ong- some genes were not even tested in the more complex model
+      .default = "none")) ##This none is wrong- some genes were not even tested in the more complex model
 
-# plots
+# plot fdr vs fdr
 # For genes that are in both viral and seasonal contrast 
 plt <- ggplot(de_combined, aes(dir_FDR_viral, dir_FDR_season)) +
   geom_point(aes(color = sign_season_virus, shape = sign_season), size = 1, alpha = 0.6) +
@@ -132,6 +132,23 @@ png(file.path(conf$data_path, "Season/Season_new_date/plots/p_vs_p_season_virus.
     width = 1000, height = 800, res = 150)
 print(plt)
 dev.off()
+
+# plot logFC vs logFC
+plt <- ggplot(de_combined%>%
+                filter(FDR_season_init < 0.05), aes(logFC_season_init, logFC_season)) +
+  geom_point(aes(color = sign_season), size = 1, alpha = 0.4) +
+  geom_abline(intercept = 0, slope = 1, linetype = "dashed", color = "gray50") 
+
+png(file.path(conf$data_path, "Season/Season_new_date/plots/logfc_vs_logfc_season_virus.png"), 
+    width = 1000, height = 800, res = 150)
+print(plt)
+dev.off()
+
+plt <- ggplot(de_combined%>%
+                filter(FDR_season_init < 0.05), aes(logFC_viral, logFC_season)) +
+  geom_point(aes(color = sign_season_virus), size = 1, alpha = 0.4) +
+  geom_abline(intercept = 0, slope = 1, linetype = "dashed", color = "gray50") 
+
 
 ##### 2. Perform "sensitivity analysis": exclude subjects with viral reads.
 

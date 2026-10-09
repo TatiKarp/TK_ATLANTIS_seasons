@@ -125,7 +125,7 @@ dev.off()
 
 saveRDS(plt, file.path(conf$data_path, "Season/Season_new_date/plots/Volcano_seasons_15Nov.rds"))
 
-## 4. DE analysis - Check model corrected for season AND ciliated cells 
+## 4. DE analysis - Check model corrected for season AND cell types 
 
 # add cell types:
 master.Table.cell.types <- master.Table %>%
@@ -134,7 +134,7 @@ master.Table.cell.types <- master.Table %>%
               as.data.frame() %>%
               tibble::rownames_to_column("Sample") , by = c("GenomeScan_ID" = "Sample"))
 
-
+# 4.1 for Season + ciliated cells 
 design <- model.matrix(~new_seasons + age + gender + smoking.status + asthma.status + `Multiciliated.lineage`, data = master.Table.cell.types)
 
 edger <- run_edger_pipeline(expression.data, design)
@@ -145,6 +145,11 @@ summary(decideTests(qlf_seasons_ciliated_corrected))
 # Down                        102
 # NotSig                    17694
 # Up                          164
+
+de_result_season_ciliated_corrected <- topTags(qlf_seasons_ciliated_corrected, n = nrow(edger$DGEL))$table %>%
+  tibble::rownames_to_column("Gene") %>%
+  left_join(all_new_gene, by = c("Gene" = "ensembl_gene_id")) %>%
+  write.csv(file.path(conf$data_path, "Season/Season_new_date/DE_genes_15Nov_season_ciliated_cor.csv"), row.names = FALSE)
 
 qlf_ciliated <- edgeR::glmQLFTest(edger$fit, coef = 8)
 summary(decideTests(qlf_ciliated))
@@ -166,16 +171,51 @@ de_result_asthma_season_ciliated_corrected <- topTags(qlf_asthma_season_ciliated
   tibble::rownames_to_column("Gene") %>%
   left_join(all_new_gene, by = c("Gene" = "ensembl_gene_id")) %>%
   write.csv(file.path(conf$data_path, "Season/Season_new_date/DE_genes_15Nov_asthma_season_ciliated_cor.csv"), row.names = FALSE)
-  
+
+# 4.2 for Season + cilliated cells + basal cells
+
+
+design <- model.matrix(~new_seasons + age + gender + smoking.status + asthma.status + `Multiciliated.lineage` + `Basal.resting...Suprabasal`, 
+                       data = master.Table.cell.types)
+
+edger <- run_edger_pipeline(expression.data, design)
+
+qlf_seasons_cil_basal_corrected <- edgeR::glmQLFTest(edger$fit, coef = 2)
+summary(decideTests(qlf_seasons_cil_basal_corrected))
+
+# new_seasonswinter_spring
+# Down                         42
+# NotSig                    17927
+# Up                          153
+
+qlf_ciliated <- edgeR::glmQLFTest(edger$fit, coef = 8)
+summary(decideTests(qlf_ciliated))
+
+qlf_basal <- edgeR::glmQLFTest(edger$fit, coef = 9)
+summary(decideTests(qlf_basal))
+
+# add gene names
+ensembl <- useMart("ensembl", dataset="hsapiens_gene_ensembl")
+gene_ids <- rownames(edger$DGEL$counts)
+all_new_gene <- getBM(attributes = c("ensembl_gene_id", "external_gene_name"),
+                      filters = "ensembl_gene_id", values = gene_ids, mart = ensembl)
+
+de_result_asthma_season_ciliated_basal_corrected <- topTags(qlf_seasons_cil_basal_corrected, n = nrow(edger$DGEL))$table %>%
+  tibble::rownames_to_column("Gene") %>%
+  left_join(all_new_gene, by = c("Gene" = "ensembl_gene_id")) %>%
+  write.csv(file.path(conf$data_path, "Season/Season_new_date/DE_genes_15Nov_asthma_season_ciliated_basal_cor.csv"), row.names = FALSE)
+
+topTags(qlf_ciliated, n = nrow(edger$DGEL))$table %>%
+  tibble::rownames_to_column("Gene") %>%
+  left_join(all_new_gene, by = c("Gene" = "ensembl_gene_id")) %>%
+  write.csv(file.path(conf$data_path, "Season/Season_new_date/DE_genes_15Nov_asthma_season_ciliated_basal_cor_cilContr.csv"), row.names = FALSE)
+
+topTags(qlf_basal, n = nrow(edger$DGEL))$table %>%
+  tibble::rownames_to_column("Gene") %>%
+  left_join(all_new_gene, by = c("Gene" = "ensembl_gene_id")) %>%
+  write.csv(file.path(conf$data_path, "Season/Season_new_date/DE_genes_15Nov_asthma_season_ciliated_basal_cor_basalContr.csv"), row.names = FALSE)
 
 ## 5. DE analysis - Check model corrected ONLY for ciliated cells 
-
-# add cell types:
-master.Table.cell.types <- master.Table %>%
-  left_join(cell_types <- read.csv(file.path(conf$data_path, "Season/cell_types/CIBERSORT.proportions.csv"), row.names = "X") %>%
-              t() %>%
-              as.data.frame() %>%
-              tibble::rownames_to_column("Sample") , by = c("GenomeScan_ID" = "Sample"))
 
 # add cell types:
 master.Table.cell.types <- master.Table %>%
@@ -200,4 +240,38 @@ de_result_asthma_ciliated_corrected <- topTags(qlf_asthma_ciliated_corrected, n 
   left_join(all_new_gene, by = c("Gene" = "ensembl_gene_id")) %>%
   write.csv(file.path(conf$data_path, "Season/Season_new_date/DE_genes_15Nov_asthma_ciliated_cor.csv"), row.names = FALSE)
 
+## 6. Check model with the adjustment for the ICS
 
+ics_info <- read.csv(file.path(conf$data_path, "atlantis_patient_data.csv"), header =TRUE, na.strings=c("","NA")) %>%
+  filter(VISIT_n == 1) %>%
+  dplyr::select(c('PT','ICS', 'ICS_LABA',
+                  'ICS_LABA_DDOSE_EQ', 'ICS_DDOSE_EQ')) %>%
+  mutate(
+    any_ICS = if_else(ICS == "No" & ICS_LABA == "No", "No", "Yes"),
+    ICS_dose_sum = if_else(is.na(ICS_DDOSE_EQ) & is.na(ICS_LABA_DDOSE_EQ), NA,
+                           coalesce(ICS_DDOSE_EQ, 0) + coalesce(ICS_LABA_DDOSE_EQ, 0)))
+
+master.Table <- master.Table %>%
+  left_join(ics_info, by = c('PT'='PT'))
+
+design <- model.matrix(~new_seasons + age + gender + smoking.status + asthma.status + any_ICS, data = master.Table)
+edger <- run_edger_pipeline(expression.data, design)
+
+# contrast - season 
+qlf_seasons <- edgeR::glmQLFTest(edger$fit, coef = 2)
+summary(decideTests(qlf_seasons))
+
+qlf_ICS <- edgeR::glmQLFTest(edger$fit, coef = 8)
+summary(decideTests(qlf_ICS))
+
+# add gene names
+ensembl <- useEnsembl("ensembl", dataset="hsapiens_gene_ensembl")
+gene_ids <- rownames(edger$DGEL$counts)
+all_new_gene <- getBM(attributes = c("ensembl_gene_id", "external_gene_name"),
+                      filters = "ensembl_gene_id", values = gene_ids, mart = ensembl)
+
+de_result_seasons_corrected_ICS <- topTags(qlf_seasons, n = nrow(edger$DGEL))$table %>%
+  tibble::rownames_to_column("Gene") %>%
+  left_join(all_new_gene, by = c("Gene" = "ensembl_gene_id"))
+
+write.csv(de_result_seasons_corrected_ICS, file.path(conf$data_path, "Season/Season_new_date/DE_genes_seasons_corrected_ics.csv"), row.names = FALSE)

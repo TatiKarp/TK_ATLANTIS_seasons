@@ -84,7 +84,7 @@ PIAMA_dates <- PIAMA_dates%>%
   mutate(gender = factor(gender, levels = c("girl", "boy")),
          asthma.status = factor(asthma.status, levels = c("no_asthma", "asthma")))
 
-var_for_table <- c("asthma.status", "smoking.status", "gender")
+var_for_table <- c("asthma.status", "smoking.status", "gender", "lung.cs", "hfc.status")
 
 tabtotal <- CreateTableOne(vars = var_for_table, strata = "new_seasons" , data = PIAMA_dates)
 
