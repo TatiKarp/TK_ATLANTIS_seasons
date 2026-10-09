@@ -28,7 +28,7 @@ layout_design <- "
   B
 " 
 up_down_stack <- up_genes + down_genes +
-c
+  plot_layout(design = layout_design)
 
 
 gsva_label <- ggplot() +

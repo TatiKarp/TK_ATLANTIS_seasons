@@ -59,7 +59,7 @@ figure1 <- ggplot(dates_genes_df, aes(x = Date_start)) +
   )) +
   labs(
     x = "Start of the season boundary",
-    y = "Number of significantly expressed genes",
+    y = "Number of significantly differentially expressed genes",
     color = ""
   ) +
   theme(axis.text=element_text(size=15),
@@ -104,7 +104,7 @@ combined_plot <- figure1 + volcano +
 
 png(file.path(conf$data_path, "Season/Season_new_date/plots/Figure1_linear_volcano.png"), 
     width = 1300, 
-    height = 1700,
+    height = 1950,
     res = 150)
 print(combined_plot)
 dev.off()
